@@ -1,0 +1,187 @@
+import { useState, useEffect } from 'react'
+import api from '../api/client'
+import { useAuth } from '../context/AuthContext'
+
+function TeacherModal({ teacher, subjects, onClose, onSaved }) {
+  const [form, setForm] = useState({
+    full_name: teacher?.full_name ?? '',
+    room: teacher?.room ?? '',
+    subject_ids: teacher?.subjects?.map(s => s.id) ?? [],
+  })
+  const [error, setError] = useState('')
+  const [saving, setSaving] = useState(false)
+
+  const toggleSubject = (id) => {
+    setForm(f => ({
+      ...f,
+      subject_ids: f.subject_ids.includes(id)
+        ? f.subject_ids.filter(x => x !== id)
+        : [...f.subject_ids, id],
+    }))
+  }
+
+  const handleSave = async () => {
+    if (!form.full_name.trim()) { setError('Введите ФИО'); return }
+    setSaving(true)
+    try {
+      if (teacher) {
+        await api.put(`/teachers/${teacher.id}`, form)
+      } else {
+        await api.post('/teachers/', form)
+      }
+      onSaved()
+    } catch (e) {
+      setError(e.response?.data?.detail ?? 'Ошибка сохранения')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal" onClick={e => e.stopPropagation()}>
+        <div className="modal-title">{teacher ? 'Редактировать учителя' : 'Добавить учителя'}</div>
+        {error && <div className="alert alert-error">{error}</div>}
+        <div className="form-group">
+          <label>ФИО</label>
+          <input value={form.full_name} onChange={e => setForm(f => ({ ...f, full_name: e.target.value }))} placeholder="Иванов Иван Иванович" />
+        </div>
+        <div className="form-group">
+          <label>Кабинет</label>
+          <input value={form.room} onChange={e => setForm(f => ({ ...f, room: e.target.value }))} placeholder="101" />
+        </div>
+        <div className="form-group">
+          <label>Предметы</label>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 4 }}>
+            {subjects.map(s => (
+              <label key={s.id} style={{ display: 'flex', alignItems: 'center', gap: 4, fontWeight: 400, cursor: 'pointer' }}>
+                <input type="checkbox" checked={form.subject_ids.includes(s.id)} onChange={() => toggleSubject(s.id)} style={{ width: 'auto' }} />
+                {s.name}
+              </label>
+            ))}
+          </div>
+        </div>
+        <div className="modal-footer">
+          <button className="btn-secondary" onClick={onClose}>Отмена</button>
+          <button className="btn-primary" onClick={handleSave} disabled={saving}>{saving ? 'Сохранение...' : 'Сохранить'}</button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+export default function TeachersPage() {
+  const { user } = useAuth()
+  const isAdmin = user?.role === 'admin'
+  const [teachers, setTeachers] = useState([])
+  const [subjects, setSubjects] = useState([])
+  const [modal, setModal] = useState(null) // null | 'add' | teacher obj
+  const [loading, setLoading] = useState(true)
+
+  const load = async () => {
+    setLoading(true)
+    const [t, s] = await Promise.all([api.get('/teachers/'), api.get('/grades/').catch(() => ({ data: [] }))])
+    setTeachers((await api.get('/teachers/')).data)
+    // load subjects from teachers
+    setLoading(false)
+  }
+
+  const loadAll = async () => {
+    setLoading(true)
+    try {
+      const [t] = await Promise.all([api.get('/teachers/')])
+      setTeachers(t.data)
+      // Collect unique subjects from teachers
+      const sMap = {}
+      t.data.forEach(tc => tc.subjects.forEach(s => { sMap[s.id] = s }))
+      // Also fetch subjects separately if endpoint exists
+      try {
+        const subRes = await api.get('/grades/').catch(() => null)
+        // Use collected subjects as fallback
+      } catch {}
+      setSubjects(Object.values(sMap))
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // Fetch subjects from a dedicated endpoint if available
+  const fetchSubjects = async () => {
+    try {
+      // Try to get subjects from teachers data
+      const t = await api.get('/teachers/')
+      setTeachers(t.data)
+      const sMap = {}
+      t.data.forEach(tc => tc.subjects.forEach(s => { sMap[s.id] = s }))
+      setSubjects(Object.values(sMap))
+    } catch {}
+  }
+
+  useEffect(() => { fetchSubjects(); setLoading(false) }, [])
+
+  const handleDelete = async (id) => {
+    if (!confirm('Удалить учителя?')) return
+    await api.delete(`/teachers/${id}`)
+    fetchSubjects()
+  }
+
+  return (
+    <div style={{ padding: '24px', maxWidth: 960, margin: '0 auto' }}>
+      <div className="page-header">
+        <div className="page-title">👨‍🏫 Учителя</div>
+        {isAdmin && <button className="btn-primary" onClick={() => setModal('add')}>+ Добавить</button>}
+      </div>
+
+      <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
+        {loading ? (
+          <div className="empty-state">Загрузка...</div>
+        ) : teachers.length === 0 ? (
+          <div className="empty-state">Учителя не найдены</div>
+        ) : (
+          <table>
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>ФИО</th>
+                <th>Кабинет</th>
+                <th>Предметы</th>
+                {isAdmin && <th>Действия</th>}
+              </tr>
+            </thead>
+            <tbody>
+              {teachers.map((t, i) => (
+                <tr key={t.id}>
+                  <td style={{ color: 'var(--text-muted)' }}>{i + 1}</td>
+                  <td style={{ fontWeight: 500 }}>{t.full_name}</td>
+                  <td>{t.room || '—'}</td>
+                  <td>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+                      {t.subjects.length ? t.subjects.map(s => (
+                        <span key={s.id} style={{ background: '#dbeafe', color: '#1e40af', fontSize: 11, padding: '2px 8px', borderRadius: 999, fontWeight: 600 }}>{s.name}</span>
+                      )) : <span style={{ color: 'var(--text-muted)' }}>—</span>}
+                    </div>
+                  </td>
+                  {isAdmin && (
+                    <td>
+                      <button className="btn-secondary btn-sm" onClick={() => setModal(t)} style={{ marginRight: 6 }}>✏️</button>
+                      <button className="btn-danger btn-sm" onClick={() => handleDelete(t.id)}>🗑️</button>
+                    </td>
+                  )}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
+
+      {modal && (
+        <TeacherModal
+          teacher={modal === 'add' ? null : modal}
+          subjects={subjects}
+          onClose={() => setModal(null)}
+          onSaved={() => { setModal(null); fetchSubjects() }}
+        />
+      )}
+    </div>
+  )
+}
