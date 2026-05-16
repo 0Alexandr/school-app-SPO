@@ -1,9 +1,10 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from typing import List
+
 from app.db.database import get_db
-from app.models.models import Student, Class
-from app.schemas.schemas import StudentCreate, StudentUpdate, StudentOut, ClassCreate, ClassOut
+from app.models.models import Class, Student
+from app.schemas.schemas import ClassCreate, ClassOut, StudentCreate, StudentOut, StudentUpdate
 from app.services.auth_service import require_admin, require_user
 
 router = APIRouter()
@@ -19,6 +20,25 @@ def get_student_or_404(student_id: int, db: Session) -> Student:
 @router.get("/", response_model=List[StudentOut])
 def list_students(db: Session = Depends(get_db), _=Depends(require_user)):
     return db.query(Student).all()
+
+
+@router.get("/classes/all", response_model=List[ClassOut])
+def list_classes(db: Session = Depends(get_db), _=Depends(require_user)):
+    return db.query(Class).order_by(Class.name).all()
+
+
+@router.post("/classes/", response_model=ClassOut, status_code=201)
+def create_class(data: ClassCreate, db: Session = Depends(get_db), _=Depends(require_admin)):
+    name = data.name.strip()
+    if not name:
+        raise HTTPException(status_code=400, detail="Class name is required")
+    if db.query(Class).filter(Class.name == name).first():
+        raise HTTPException(status_code=400, detail="Class already exists")
+    class_ = Class(name=name)
+    db.add(class_)
+    db.commit()
+    db.refresh(class_)
+    return class_
 
 
 @router.get("/{student_id}", response_model=StudentOut)
@@ -54,19 +74,3 @@ def delete_student(student_id: int, db: Session = Depends(get_db), _=Depends(req
     student = get_student_or_404(student_id, db)
     db.delete(student)
     db.commit()
-
-
-# ─── Classes sub-resource ────────────────────────────────────────────────────
-
-@router.get("/classes/all", response_model=List[ClassOut])
-def list_classes(db: Session = Depends(get_db), _=Depends(require_user)):
-    return db.query(Class).all()
-
-
-@router.post("/classes/", response_model=ClassOut, status_code=201)
-def create_class(data: ClassCreate, db: Session = Depends(get_db), _=Depends(require_admin)):
-    cls = Class(name=data.name)
-    db.add(cls)
-    db.commit()
-    db.refresh(cls)
-    return cls

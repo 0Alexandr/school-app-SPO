@@ -115,22 +115,15 @@ export default function GradesPage() {
   const loadData = async () => {
     setLoading(true)
     try {
-      const [gradesResponse, studentsResponse, teachersResponse] = await Promise.all([
+      const [gradesResponse, studentsResponse, subjectsResponse] = await Promise.all([
         api.get('/grades/'),
         api.get('/students/'),
-        api.get('/teachers/'),
+        api.get('/teachers/subjects/all'),
       ])
 
       setGrades(gradesResponse.data)
       setStudents(studentsResponse.data)
-
-      const subjectMap = {}
-      teachersResponse.data.forEach(teacher => {
-        teacher.subjects.forEach(subject => {
-          subjectMap[subject.id] = subject
-        })
-      })
-      setSubjects(Object.values(subjectMap))
+      setSubjects(subjectsResponse.data)
     } finally {
       setLoading(false)
     }

@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from typing import List
 from app.db.database import get_db
 from app.models.models import Teacher, Subject
-from app.schemas.schemas import TeacherCreate, TeacherUpdate, TeacherOut
+from app.schemas.schemas import SubjectOut, TeacherCreate, TeacherUpdate, TeacherOut
 from app.services.auth_service import require_admin, require_user
 
 router = APIRouter()
@@ -19,6 +19,11 @@ def get_teacher_or_404(teacher_id: int, db: Session) -> Teacher:
 @router.get("/", response_model=List[TeacherOut])
 def list_teachers(db: Session = Depends(get_db), _=Depends(require_user)):
     return db.query(Teacher).all()
+
+
+@router.get("/subjects/all", response_model=List[SubjectOut])
+def list_subjects(db: Session = Depends(get_db), _=Depends(require_user)):
+    return db.query(Subject).order_by(Subject.name).all()
 
 
 @router.get("/{teacher_id}", response_model=TeacherOut)

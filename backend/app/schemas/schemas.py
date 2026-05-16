@@ -41,6 +41,10 @@ class UserCreate(BaseModel):
     role: UserRole = UserRole.user
 
 
+class UserRoleUpdate(BaseModel):
+    role: UserRole
+
+
 # ─── Subject ─────────────────────────────────────────────────────────────────
 
 class SubjectBase(BaseModel):

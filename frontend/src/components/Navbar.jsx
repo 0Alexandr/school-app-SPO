@@ -2,11 +2,12 @@ import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 
 const links = [
-  { to: '/', label: '🏠 Главная', roles: ['user', 'admin'] },
-  { to: '/teachers', label: '👨‍🏫 Учителя', roles: ['user', 'admin'] },
-  { to: '/students', label: '🎓 Ученики', roles: ['user', 'admin'] },
-  { to: '/grades', label: '📊 Успеваемость', roles: ['user', 'admin'] },
-  { to: '/analytics', label: '📈 Аналитика', roles: ['user', 'admin'] },
+  { to: '/', label: 'Главная', roles: ['user', 'admin'] },
+  { to: '/teachers', label: 'Учителя', roles: ['user', 'admin'] },
+  { to: '/students', label: 'Ученики', roles: ['user', 'admin'] },
+  { to: '/grades', label: 'Успеваемость', roles: ['user', 'admin'] },
+  { to: '/analytics', label: 'Аналитика', roles: ['user', 'admin'] },
+  { to: '/admin', label: 'Admin', roles: ['admin'] },
 ]
 
 export default function Navbar() {
@@ -14,7 +15,10 @@ export default function Navbar() {
   const location = useLocation()
   const navigate = useNavigate()
 
-  const handleLogout = () => { logout(); navigate('/login') }
+  const handleLogout = () => {
+    logout()
+    navigate('/login')
+  }
 
   return (
     <nav style={{
@@ -23,19 +27,21 @@ export default function Navbar() {
       display: 'flex',
       alignItems: 'center',
       padding: '0 24px',
-      height: '56px',
+      minHeight: '56px',
       boxShadow: '0 2px 8px rgba(0,0,0,.15)',
       position: 'sticky',
       top: 0,
       zIndex: 40,
+      gap: 18,
+      flexWrap: 'wrap',
     }}>
-      <span style={{ fontWeight: 700, fontSize: 18, marginRight: 32 }}>🏫 Школа</span>
-      <div style={{ display: 'flex', gap: 4, flex: 1 }}>
-        {links.map(l => {
-          if (!user || !l.roles.includes(user.role)) return null
-          const active = location.pathname === l.to
+      <span style={{ fontWeight: 700, fontSize: 18 }}>Школа</span>
+      <div style={{ display: 'flex', gap: 4, flex: 1, flexWrap: 'wrap' }}>
+        {links.map(link => {
+          if (!user || !link.roles.includes(user.role)) return null
+          const active = location.pathname === link.to
           return (
-            <Link key={l.to} to={l.to} style={{
+            <Link key={link.to} to={link.to} style={{
               color: active ? '#fff' : 'rgba(255,255,255,.75)',
               background: active ? 'rgba(255,255,255,.15)' : 'transparent',
               padding: '6px 14px',
@@ -43,7 +49,9 @@ export default function Navbar() {
               fontWeight: active ? 600 : 400,
               fontSize: 14,
               textDecoration: 'none',
-            }}>{l.label}</Link>
+            }}>
+              {link.label}
+            </Link>
           )
         })}
       </div>
@@ -62,7 +70,9 @@ export default function Navbar() {
           borderRadius: 6,
           cursor: 'pointer',
           fontSize: 13,
-        }}>Выйти</button>
+        }}>
+          Выйти
+        </button>
       </div>
     </nav>
   )

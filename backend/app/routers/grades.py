@@ -53,7 +53,7 @@ def create_grade(data: GradeCreate, db: Session = Depends(get_db), _=Depends(req
     if find_existing_grade(db, data.student_id, data.subject_id, data.quarter):
         raise HTTPException(
             status_code=409,
-            detail="Grade for this student, subject and quarter already exists",
+            detail="Оценка для этого ученика, предмета и четверти уже существует.",
         )
     grade = Grade(**data.model_dump())
     db.add(grade)
@@ -71,7 +71,7 @@ def update_grade(grade_id: int, data: GradeUpdate, db: Session = Depends(get_db)
     if find_existing_grade(db, grade.student_id, grade.subject_id, next_quarter, exclude_grade_id=grade.id):
         raise HTTPException(
             status_code=409,
-            detail="Grade for this student, subject and quarter already exists",
+            detail="Оценка для этого ученика, предмета и четверти уже существует.",
         )
     grade.value = data.value
     grade.quarter = next_quarter

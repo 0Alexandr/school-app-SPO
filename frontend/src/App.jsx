@@ -8,6 +8,7 @@ import TeachersPage from './pages/TeachersPage'
 import StudentsPage from './pages/StudentsPage'
 import GradesPage from './pages/GradesPage'
 import AnalyticsPage from './pages/AnalyticsPage'
+import AdminPage from './pages/AdminPage'
 import './index.css'
 
 function Layout({ children }) {
@@ -48,6 +49,11 @@ export default function App() {
           <Route path="/analytics" element={
             <ProtectedRoute roles={['user', 'admin']}>
               <Layout><AnalyticsPage /></Layout>
+            </ProtectedRoute>
+          } />
+          <Route path="/admin" element={
+            <ProtectedRoute roles={['admin']}>
+              <Layout><AdminPage /></Layout>
             </ProtectedRoute>
           } />
           <Route path="*" element={<Navigate to="/" replace />} />

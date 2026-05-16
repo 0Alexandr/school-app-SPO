@@ -78,46 +78,21 @@ export default function TeachersPage() {
   const [modal, setModal] = useState(null) // null | 'add' | teacher obj
   const [loading, setLoading] = useState(true)
 
-  const load = async () => {
-    setLoading(true)
-    const [t, s] = await Promise.all([api.get('/teachers/'), api.get('/grades/').catch(() => ({ data: [] }))])
-    setTeachers((await api.get('/teachers/')).data)
-    // load subjects from teachers
-    setLoading(false)
-  }
-
-  const loadAll = async () => {
+  const fetchSubjects = async () => {
     setLoading(true)
     try {
-      const [t] = await Promise.all([api.get('/teachers/')])
-      setTeachers(t.data)
-      // Collect unique subjects from teachers
-      const sMap = {}
-      t.data.forEach(tc => tc.subjects.forEach(s => { sMap[s.id] = s }))
-      // Also fetch subjects separately if endpoint exists
-      try {
-        const subRes = await api.get('/grades/').catch(() => null)
-        // Use collected subjects as fallback
-      } catch {}
-      setSubjects(Object.values(sMap))
+      const [teachersResponse, subjectsResponse] = await Promise.all([
+        api.get('/teachers/'),
+        api.get('/teachers/subjects/all'),
+      ])
+      setTeachers(teachersResponse.data)
+      setSubjects(subjectsResponse.data)
     } finally {
       setLoading(false)
     }
   }
 
-  // Fetch subjects from a dedicated endpoint if available
-  const fetchSubjects = async () => {
-    try {
-      // Try to get subjects from teachers data
-      const t = await api.get('/teachers/')
-      setTeachers(t.data)
-      const sMap = {}
-      t.data.forEach(tc => tc.subjects.forEach(s => { sMap[s.id] = s }))
-      setSubjects(Object.values(sMap))
-    } catch {}
-  }
-
-  useEffect(() => { fetchSubjects(); setLoading(false) }, [])
+  useEffect(() => { fetchSubjects() }, [])
 
   const handleDelete = async (id) => {
     if (!confirm('Удалить учителя?')) return
