@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from app.db.database import get_db
 from app.models.models import User
-from app.schemas.schemas import LoginRequest, TokenResponse, RefreshRequest, UserCreate, UserOut
+from app.schemas.schemas import LoginRequest, PasswordUpdate, RefreshRequest, TokenResponse, UserCreate, UserOut, UserProfileUpdate
 from app.services.auth_service import (
     verify_password, hash_password,
     create_access_token, create_refresh_token,
@@ -38,13 +38,17 @@ def refresh(data: RefreshRequest, db: Session = Depends(get_db)):
 
 
 @router.post("/register", response_model=UserOut)
-def register(data: UserCreate, db: Session = Depends(get_db), _=Depends(require_admin)):
+def register(data: UserCreate, db: Session = Depends(get_db)):
     if db.query(User).filter(User.login == data.login).first():
         raise HTTPException(status_code=400, detail="Login already taken")
+    if data.email and db.query(User).filter(User.email == data.email).first():
+        raise HTTPException(status_code=400, detail="Email already taken")
     user = User(
         login=data.login,
+        email=data.email,
+        full_name=data.full_name,
         hashed_password=hash_password(data.password),
-        role=data.role,
+        role="guest",
     )
     db.add(user)
     db.commit()
@@ -54,4 +58,33 @@ def register(data: UserCreate, db: Session = Depends(get_db), _=Depends(require_
 
 @router.get("/me", response_model=UserOut)
 def me(current_user: User = Depends(get_current_user)):
+    return current_user
+
+
+@router.put("/me", response_model=UserOut)
+def update_me(
+    data: UserProfileUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    if data.email and db.query(User).filter(User.email == data.email, User.id != current_user.id).first():
+        raise HTTPException(status_code=400, detail="Email already taken")
+    current_user.email = data.email
+    current_user.full_name = data.full_name
+    db.commit()
+    db.refresh(current_user)
+    return current_user
+
+
+@router.put("/me/password", response_model=UserOut)
+def update_password(
+    data: PasswordUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    if not verify_password(data.current_password, current_user.hashed_password):
+        raise HTTPException(status_code=400, detail="Текущий пароль указан неверно")
+    current_user.hashed_password = hash_password(data.new_password)
+    db.commit()
+    db.refresh(current_user)
     return current_user

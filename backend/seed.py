@@ -17,9 +17,88 @@ def seed():
         return
 
     # Users
-    admin = User(login="admin", hashed_password=hash_password("admin123"), role="admin")
-    user = User(login="teacher1", hashed_password=hash_password("pass123"), role="user")
-    db.add_all([admin, user])
+    admin = User(
+        login="admin",
+        email="zavuch@school.local",
+        full_name="Смирнова Елена Викторовна",
+        hashed_password=hash_password("admin123"),
+        role="admin",
+    )
+    teacher1 = User(
+        login="teacher1",
+        email="ivanov@school.local",
+        full_name="Иванов Иван Иванович",
+        hashed_password=hash_password("pass123"),
+        role="user",
+    )
+    teacher2 = User(
+        login="teacher2",
+        email="petrova@school.local",
+        full_name="Петрова Мария Сергеевна",
+        hashed_password=hash_password("pass123"),
+        role="user",
+    )
+    teacher3 = User(
+        login="teacher3",
+        email="sidorov@school.local",
+        full_name="Сидоров Алексей Николаевич",
+        hashed_password=hash_password("pass123"),
+        role="user",
+    )
+    student1 = User(
+        login="student1",
+        email="alekseev@school.local",
+        full_name="Алексеев Дмитрий Павлович",
+        hashed_password=hash_password("pass123"),
+        role="guest",
+    )
+    student2 = User(
+        login="student2",
+        email="borisova@school.local",
+        full_name="Борисова Екатерина Игоревна",
+        hashed_password=hash_password("pass123"),
+        role="guest",
+    )
+    student3 = User(
+        login="student3",
+        email="vasilev@school.local",
+        full_name="Васильев Сергей Андреевич",
+        hashed_password=hash_password("pass123"),
+        role="guest",
+    )
+    student4 = User(
+        login="student4",
+        email="gavrilova@school.local",
+        full_name="Гаврилова Ольга Михайловна",
+        hashed_password=hash_password("pass123"),
+        role="guest",
+    )
+    student5 = User(
+        login="student5",
+        email="denisov@school.local",
+        full_name="Денисов Кирилл Александрович",
+        hashed_password=hash_password("pass123"),
+        role="guest",
+    )
+    student6 = User(
+        login="student6",
+        email="ezhova@school.local",
+        full_name="Ежова Анастасия Викторовна",
+        hashed_password=hash_password("pass123"),
+        role="guest",
+    )
+    db.add_all([
+        admin,
+        teacher1,
+        teacher2,
+        teacher3,
+        student1,
+        student2,
+        student3,
+        student4,
+        student5,
+        student6,
+    ])
 
     # Subjects
     math = Subject(name="Математика")
@@ -37,21 +116,21 @@ def seed():
     db.flush()
 
     # Teachers
-    t1 = Teacher(full_name="Иванов Иван Иванович", room="101", subjects=[math, phys])
-    t2 = Teacher(full_name="Петрова Мария Сергеевна", room="205", subjects=[hist, rus])
-    t3 = Teacher(full_name="Сидоров Алексей Николаевич", room="312", subjects=[math])
+    t1 = Teacher(full_name="Иванов Иван Иванович", room="101", user=teacher1, subjects=[math, phys])
+    t2 = Teacher(full_name="Петрова Мария Сергеевна", room="205", user=teacher2, subjects=[hist, rus])
+    t3 = Teacher(full_name="Сидоров Алексей Николаевич", room="312", user=teacher3, subjects=[math])
     db.add_all([t1, t2, t3])
 
     # Students
     students_data = [
-        ("Алексеев Дмитрий Павлович", cls_9a.id),
-        ("Борисова Екатерина Игоревна", cls_9a.id),
-        ("Васильев Сергей Андреевич", cls_9b.id),
-        ("Гаврилова Ольга Михайловна", cls_9b.id),
-        ("Денисов Кирилл Александрович", cls_10a.id),
-        ("Ежова Анастасия Викторовна", cls_10a.id),
+        ("Алексеев Дмитрий Павлович", cls_9a.id, student1),
+        ("Борисова Екатерина Игоревна", cls_9a.id, student2),
+        ("Васильев Сергей Андреевич", cls_9b.id, student3),
+        ("Гаврилова Ольга Михайловна", cls_9b.id, student4),
+        ("Денисов Кирилл Александрович", cls_10a.id, student5),
+        ("Ежова Анастасия Викторовна", cls_10a.id, student6),
     ]
-    students = [Student(full_name=name, class_id=cid) for name, cid in students_data]
+    students = [Student(full_name=name, class_id=cid, user=user) for name, cid, user in students_data]
     db.add_all(students)
     db.flush()
 
@@ -71,6 +150,9 @@ def seed():
     print("✅ Seed complete!")
     print("   admin / admin123  (role: admin)")
     print("   teacher1 / pass123  (role: user)")
+    print("   teacher2 / pass123  (role: user)")
+    print("   teacher3 / pass123  (role: user)")
+    print("   student1..student6 / pass123  (role: guest)")
 
 
 if __name__ == "__main__":

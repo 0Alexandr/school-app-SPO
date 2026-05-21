@@ -1,13 +1,15 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import { getRoleLabel } from '../utils/roles'
 
 const links = [
-  { to: '/', label: 'Главная', roles: ['user', 'admin'] },
-  { to: '/teachers', label: 'Учителя', roles: ['user', 'admin'] },
-  { to: '/students', label: 'Ученики', roles: ['user', 'admin'] },
-  { to: '/grades', label: 'Успеваемость', roles: ['user', 'admin'] },
-  { to: '/analytics', label: 'Аналитика', roles: ['user', 'admin'] },
-  { to: '/admin', label: 'Admin', roles: ['admin'] },
+  { to: '/', label: 'Главная', roles: ['guest', 'user', 'admin'] },
+  { to: '/teachers', label: 'Учителя', roles: ['guest', 'user', 'admin'] },
+  { to: '/students', label: 'Ученики', roles: ['guest', 'user', 'admin'] },
+  { to: '/grades', label: 'Успеваемость', roles: ['guest', 'user', 'admin'] },
+  { to: '/analytics', label: 'Аналитика', roles: ['guest', 'user', 'admin'] },
+  { to: '/profile', label: 'Профиль', roles: ['guest', 'user', 'admin'] },
+  { to: '/admin', label: 'Завуч', roles: ['admin'] },
 ]
 
 export default function Navbar() {
@@ -58,7 +60,7 @@ export default function Navbar() {
       <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
         {user && (
           <span style={{ fontSize: 13, opacity: .85 }}>
-            <span className={`badge badge-${user.role}`}>{user.role}</span>{' '}
+            <span className={`badge badge-${user.role}`}>{getRoleLabel(user.role)}</span>{' '}
             {user.login}
           </span>
         )}

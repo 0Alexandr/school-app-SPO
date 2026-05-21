@@ -4,23 +4,26 @@ from sqlalchemy import func
 from app.db.database import get_db
 from app.models.models import Grade, Student, Class, Teacher, Subject, teacher_subject
 from app.schemas.schemas import AnalyticsSummary, StudentOut
-from app.services.auth_service import require_user
+from app.services.auth_service import require_viewer
 
 router = APIRouter()
 
 
 @router.get("/", response_model=AnalyticsSummary)
-def get_analytics(db: Session = Depends(get_db), _=Depends(require_user)):
-    # Average, min, max grade
-    stats = db.query(
-        func.avg(Grade.value),
-        func.min(Grade.value),
-        func.max(Grade.value),
-    ).first()
+def get_analytics(db: Session = Depends(get_db), _=Depends(require_viewer)):
+    stats = db.query(func.avg(Grade.value), func.count(Grade.id)).first()
 
     average_grade = round(float(stats[0]), 2) if stats[0] else None
-    min_grade = stats[1]
-    max_grade = stats[2]
+    total_grades = stats[1] or 0
+    grade_counts = dict(db.query(Grade.value, func.count(Grade.id)).group_by(Grade.value).all())
+    grade_distribution = [
+        {
+            "grade": value,
+            "count": grade_counts.get(value, 0),
+            "percent": round((grade_counts.get(value, 0) / total_grades) * 100, 1) if total_grades else 0,
+        }
+        for value in range(2, 6)
+    ]
 
     # Failing students (avg grade < 3)
     failing_subq = (
@@ -76,8 +79,7 @@ def get_analytics(db: Session = Depends(get_db), _=Depends(require_user)):
 
     return AnalyticsSummary(
         average_grade=average_grade,
-        min_grade=min_grade,
-        max_grade=max_grade,
+        grade_distribution=grade_distribution,
         failing_students=failing_students,
         best_class=best_class_row[0] if best_class_row else None,
         worst_class=worst_class_row[0] if worst_class_row else None,

@@ -16,24 +16,26 @@ export default function AnalyticsPage() {
   if (loading) return <div style={{ padding: 24 }}><div className="empty-state">Загрузка...</div></div>
   if (error) return <div style={{ padding: 24 }}><div className="alert alert-error">{error}</div></div>
   if (!data) return null
+  const distribution = data.grade_distribution ?? []
 
   return (
-    <div style={{ padding: '24px', maxWidth: 960, margin: '0 auto' }}>
+    <div style={{ padding: '24px', maxWidth: 1120, margin: '0 auto' }}>
       <div className="page-title" style={{ marginBottom: 24 }}>📈 Аналитика успеваемости</div>
 
-      {/* Stats */}
-      <div className="stats-grid">
+      <div className="grade-distribution-row">
+        {distribution.map(item => (
+          <div className="stat-card grade-share-card" key={item.grade}>
+            <div className="stat-label">Оценка {item.grade}</div>
+            <div className={`stat-value grade-value-${item.grade}`}>{item.percent}%</div>
+            <div className="stat-note">{item.count} оценок</div>
+          </div>
+        ))}
+      </div>
+
+      <div className="analytics-second-row">
         <div className="stat-card">
           <div className="stat-label">Средняя оценка</div>
           <div className="stat-value">{data.average_grade ?? '—'}</div>
-        </div>
-        <div className="stat-card">
-          <div className="stat-label">Минимальная оценка</div>
-          <div className="stat-value" style={{ color: '#e02424' }}>{data.min_grade ?? '—'}</div>
-        </div>
-        <div className="stat-card">
-          <div className="stat-label">Максимальная оценка</div>
-          <div className="stat-value" style={{ color: '#057a55' }}>{data.max_grade ?? '—'}</div>
         </div>
         <div className="stat-card">
           <div className="stat-label">Лучший класс</div>

@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react'
 import api from '../api/client'
 import { useAuth } from '../context/AuthContext'
+import { getRoleLabel } from '../utils/roles'
 
-const roles = ['user', 'admin']
+const roles = ['guest', 'user', 'admin']
 
 export default function AdminPage() {
   const { user, refreshUser } = useAuth()
@@ -76,7 +77,7 @@ export default function AdminPage() {
     try {
       const { data } = await api.put(`/admin/users/${targetUser.id}/role`, { role })
       setUsers(current => current.map(item => item.id === data.id ? data : item))
-      showSuccess(`Роль пользователя ${data.login} изменена на ${data.role}`)
+      showSuccess(`Роль пользователя ${data.login} изменена на ${getRoleLabel(data.role)}`)
       if (targetUser.id === user?.id) {
         await refreshUser()
       }
@@ -89,7 +90,7 @@ export default function AdminPage() {
     <div style={{ padding: '24px', maxWidth: 1120, margin: '0 auto' }}>
       <div className="page-header">
         <div>
-          <div className="page-title">Admin</div>
+          <div className="page-title">Завуч</div>
           <div style={{ color: 'var(--text-muted)', marginTop: 4 }}>Предметы, классы и роли пользователей</div>
         </div>
       </div>
@@ -171,11 +172,11 @@ export default function AdminPage() {
                         {item.login}
                         {item.id === user?.id && <span style={{ color: 'var(--text-muted)' }}> (вы)</span>}
                       </td>
-                      <td><span className={`badge badge-${item.role}`}>{item.role}</span></td>
+                      <td><span className={`badge badge-${item.role}`}>{getRoleLabel(item.role)}</span></td>
                       <td style={{ maxWidth: 220 }}>
                         <select value={item.role} onChange={event => updateRole(item, event.target.value)}>
                           {roles.map(role => (
-                            <option key={role} value={role}>{role}</option>
+                            <option key={role} value={role}>{getRoleLabel(role)}</option>
                           ))}
                         </select>
                       </td>

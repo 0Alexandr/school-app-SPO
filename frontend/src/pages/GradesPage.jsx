@@ -101,7 +101,7 @@ function GradeModal({ grade, students, subjects, onClose, onSaved }) {
 
 export default function GradesPage() {
   const { user } = useAuth()
-  const isAdmin = user?.role === 'admin'
+  const canEditGrades = user?.role === 'admin' || user?.role === 'user'
   const [grades, setGrades] = useState([])
   const [students, setStudents] = useState([])
   const [subjects, setSubjects] = useState([])
@@ -172,7 +172,7 @@ export default function GradesPage() {
     <div style={{ padding: '24px', maxWidth: 1040, margin: '0 auto' }}>
       <div className="page-header">
         <div className="page-title">Успеваемость</div>
-        {isAdmin && <button className="btn-primary" onClick={() => setModal('add')}>+ Добавить оценку</button>}
+        {canEditGrades && <button className="btn-primary" onClick={() => setModal('add')}>+ Добавить оценку</button>}
       </div>
 
       <div style={{ display: 'flex', gap: 12, marginBottom: 16, flexWrap: 'wrap' }}>
@@ -222,7 +222,7 @@ export default function GradesPage() {
                 <th>Предмет</th>
                 <th>Четверть</th>
                 <th>Оценка</th>
-                {isAdmin && <th>Действия</th>}
+                {canEditGrades && <th>Действия</th>}
               </tr>
             </thead>
             <tbody>
@@ -233,7 +233,7 @@ export default function GradesPage() {
                   <td>{grade.subject ? grade.subject.name : getSubjectName(grade.subject_id)}</td>
                   <td>{grade.quarter}</td>
                   <td><span className={`badge ${gradeColor(grade.value)}`}>{grade.value}</span></td>
-                  {isAdmin && (
+                  {canEditGrades && (
                     <td>
                       <button className="btn-secondary btn-sm" onClick={() => setModal(grade)} style={{ marginRight: 6 }}>✏️</button>
                       <button className="btn-danger btn-sm" onClick={() => handleDelete(grade.id)}>🗑️</button>

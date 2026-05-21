@@ -78,3 +78,9 @@ def require_user(current_user: User = Depends(get_current_user)) -> User:
     if current_user.role not in ("user", "admin"):
         raise HTTPException(status_code=403, detail="Access denied")
     return current_user
+
+
+def require_viewer(current_user: User = Depends(get_current_user)) -> User:
+    if current_user.role not in ("guest", "user", "admin"):
+        raise HTTPException(status_code=403, detail="Access denied")
+    return current_user

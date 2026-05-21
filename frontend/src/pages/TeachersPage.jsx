@@ -2,10 +2,11 @@ import { useState, useEffect } from 'react'
 import api from '../api/client'
 import { useAuth } from '../context/AuthContext'
 
-function TeacherModal({ teacher, subjects, onClose, onSaved }) {
+function TeacherModal({ teacher, subjects, users, onClose, onSaved }) {
   const [form, setForm] = useState({
     full_name: teacher?.full_name ?? '',
     room: teacher?.room ?? '',
+    user_id: teacher?.user_id ?? '',
     subject_ids: teacher?.subjects?.map(s => s.id) ?? [],
   })
   const [error, setError] = useState('')
@@ -25,9 +26,9 @@ function TeacherModal({ teacher, subjects, onClose, onSaved }) {
     setSaving(true)
     try {
       if (teacher) {
-        await api.put(`/teachers/${teacher.id}`, form)
+        await api.put(`/teachers/${teacher.id}`, { ...form, user_id: form.user_id ? Number(form.user_id) : null })
       } else {
-        await api.post('/teachers/', form)
+        await api.post('/teachers/', { ...form, user_id: form.user_id ? Number(form.user_id) : null })
       }
       onSaved()
     } catch (e) {
@@ -49,6 +50,25 @@ function TeacherModal({ teacher, subjects, onClose, onSaved }) {
         <div className="form-group">
           <label>Кабинет</label>
           <input value={form.room} onChange={e => setForm(f => ({ ...f, room: e.target.value }))} placeholder="101" />
+        </div>
+        <div className="form-group">
+          <label>Аккаунт учителя</label>
+          <select
+            value={form.user_id}
+            onChange={e => {
+              const selectedUser = users.find(user => user.id === Number(e.target.value))
+              setForm(f => ({
+                ...f,
+                user_id: e.target.value,
+                full_name: selectedUser?.full_name || f.full_name,
+              }))
+            }}
+          >
+            <option value="">Не привязан</option>
+            {users.map(user => (
+              <option key={user.id} value={user.id}>ID {user.id} - {user.full_name || user.login}</option>
+            ))}
+          </select>
         </div>
         <div className="form-group">
           <label>Предметы</label>
@@ -75,18 +95,22 @@ export default function TeachersPage() {
   const isAdmin = user?.role === 'admin'
   const [teachers, setTeachers] = useState([])
   const [subjects, setSubjects] = useState([])
+  const [users, setUsers] = useState([])
   const [modal, setModal] = useState(null) // null | 'add' | teacher obj
+  const [filter, setFilter] = useState('')
   const [loading, setLoading] = useState(true)
 
   const fetchSubjects = async () => {
     setLoading(true)
     try {
-      const [teachersResponse, subjectsResponse] = await Promise.all([
+      const [teachersResponse, subjectsResponse, usersResponse] = await Promise.all([
         api.get('/teachers/'),
         api.get('/teachers/subjects/all'),
+        isAdmin ? api.get('/admin/users') : Promise.resolve({ data: [] }),
       ])
       setTeachers(teachersResponse.data)
       setSubjects(subjectsResponse.data)
+      setUsers(usersResponse.data)
     } finally {
       setLoading(false)
     }
@@ -99,24 +123,44 @@ export default function TeachersPage() {
     await api.delete(`/teachers/${id}`)
     fetchSubjects()
   }
+  const linkedTeacherUserIds = new Set(teachers.map(teacher => teacher.user_id).filter(Boolean))
+  const availableTeacherUsers = users.filter(item =>
+    item.role === 'user' && (!linkedTeacherUserIds.has(item.id) || item.id === modal?.user_id)
+  )
+  const normalizedFilter = filter.trim().toLowerCase()
+  const filteredTeachers = teachers.filter(teacher =>
+    !normalizedFilter ||
+    teacher.full_name.toLowerCase().includes(normalizedFilter) ||
+    String(teacher.user_id ?? '').includes(normalizedFilter)
+  )
 
   return (
     <div style={{ padding: '24px', maxWidth: 960, margin: '0 auto' }}>
       <div className="page-header">
         <div className="page-title">👨‍🏫 Учителя</div>
+      </div>
+
+      <div className="table-toolbar">
+        <input
+          placeholder="🔍 Поиск по ФИО или ID аккаунта..."
+          value={filter}
+          onChange={e => setFilter(e.target.value)}
+          style={{ maxWidth: 360 }}
+        />
         {isAdmin && <button className="btn-primary" onClick={() => setModal('add')}>+ Добавить</button>}
       </div>
 
       <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
         {loading ? (
           <div className="empty-state">Загрузка...</div>
-        ) : teachers.length === 0 ? (
+        ) : filteredTeachers.length === 0 ? (
           <div className="empty-state">Учителя не найдены</div>
         ) : (
           <table>
             <thead>
               <tr>
                 <th>#</th>
+                {isAdmin && <th>ID аккаунта</th>}
                 <th>ФИО</th>
                 <th>Кабинет</th>
                 <th>Предметы</th>
@@ -124,9 +168,10 @@ export default function TeachersPage() {
               </tr>
             </thead>
             <tbody>
-              {teachers.map((t, i) => (
+              {filteredTeachers.map((t, i) => (
                 <tr key={t.id}>
                   <td style={{ color: 'var(--text-muted)' }}>{i + 1}</td>
+                  {isAdmin && <td>{t.user_id ? `ID ${t.user_id}` : '—'}</td>}
                   <td style={{ fontWeight: 500 }}>{t.full_name}</td>
                   <td>{t.room || '—'}</td>
                   <td>
@@ -153,6 +198,7 @@ export default function TeachersPage() {
         <TeacherModal
           teacher={modal === 'add' ? null : modal}
           subjects={subjects}
+          users={availableTeacherUsers}
           onClose={() => setModal(null)}
           onSaved={() => { setModal(null); fetchSubjects() }}
         />

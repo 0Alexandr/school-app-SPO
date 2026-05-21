@@ -23,6 +23,11 @@ body {
   line-height: 1.5;
 }
 
+#root { min-height: 100vh; }
+
+.app-shell { min-height: 100vh; display: flex; flex-direction: column; }
+.app-shell main { flex: 1; }
+
 a { color: var(--primary); text-decoration: none; }
 a:hover { text-decoration: underline; }
 
@@ -38,6 +43,14 @@ button {
 
 .btn-primary { background: var(--primary); color: #fff; }
 .btn-primary:hover { background: var(--primary-dark); }
+.btn-link {
+  background: transparent;
+  color: var(--primary);
+  width: 100%;
+  margin-top: 12px;
+  padding: 6px;
+}
+.btn-link:hover { background: #eff6ff; }
 .btn-danger { background: var(--danger); color: #fff; }
 .btn-danger:hover { background: #b91c1c; }
 .btn-secondary { background: #e5e7eb; color: var(--text); }
@@ -79,7 +92,7 @@ tr:hover td { background: #f9fafb; }
 }
 .badge-admin { background: #fef3c7; color: #92400e; }
 .badge-user { background: #dbeafe; color: #1e40af; }
-.badge-guest { background: #f3f4f6; color: #6b7280; }
+.badge-guest { background: #d1fae5; color: #065f46; }
 .badge-5 { background: #d1fae5; color: #065f46; }
 .badge-4 { background: #dbeafe; color: #1e40af; }
 .badge-3 { background: #fef3c7; color: #92400e; }
@@ -112,3 +125,107 @@ tr:hover td { background: #f9fafb; }
 .stat-card { background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow); padding: 20px; }
 .stat-label { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; color: var(--text-muted); margin-bottom: 6px; }
 .stat-value { font-size: 28px; font-weight: 700; color: var(--primary); }
+.table-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+.stat-note { color: var(--text-muted); font-size: 12px; margin-top: 4px; }
+.grade-distribution-row { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; margin-bottom: 16px; }
+.analytics-second-row { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; margin-bottom: 24px; }
+.grade-share-card { min-height: 128px; }
+.grade-value-2 { color: var(--danger); }
+.grade-value-3 { color: var(--warning); }
+.grade-value-4 { color: var(--primary); }
+.grade-value-5 { color: var(--success); }
+
+.home-card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+}
+.home-card {
+  min-height: 180px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+.school-intro {
+  background: var(--surface);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 24px;
+  margin-bottom: 24px;
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(280px, .8fr);
+  gap: 24px;
+  align-items: start;
+}
+.school-intro h2 { font-size: 20px; margin-bottom: 8px; }
+.school-intro p { color: var(--text-muted); max-width: 620px; }
+.school-intro-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.school-intro-grid span {
+  background: #f9fafb;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 10px 12px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.app-footer {
+  margin-top: 32px;
+  padding: 18px 24px;
+  border-top: 1px solid var(--border);
+  background: #fff;
+  color: var(--text-muted);
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  font-size: 13px;
+}
+.app-footer div { display: flex; gap: 12px; flex-wrap: wrap; }
+.app-footer strong { color: var(--text); }
+
+.profile-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(280px, .8fr);
+  gap: 18px;
+}
+.profile-meta {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 20px;
+}
+.profile-meta div {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: #f9fafb;
+  padding: 10px 12px;
+}
+.profile-meta span {
+  display: block;
+  color: var(--text-muted);
+  font-size: 12px;
+  margin-bottom: 4px;
+}
+.profile-meta strong {
+  font-size: 15px;
+}
+
+@media (max-width: 760px) {
+  .grade-distribution-row,
+  .analytics-second-row,
+  .school-intro,
+  .profile-grid,
+  .profile-meta {
+    grid-template-columns: 1fr;
+  }
+
+  .school-intro-grid { grid-template-columns: 1fr; }
+}

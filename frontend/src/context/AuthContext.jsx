@@ -27,6 +27,23 @@ export function AuthProvider({ children }) {
     setUser(me.data)
   }
 
+  const register = async (loginValue, passwordValue, profile = {}) => {
+    await api.post('/auth/register', { login: loginValue, password: passwordValue, ...profile })
+    await login(loginValue, passwordValue)
+  }
+
+  const updateProfile = async (profile) => {
+    const { data } = await api.put('/auth/me', profile)
+    setUser(data)
+    return data
+  }
+
+  const updatePassword = async (passwords) => {
+    const { data } = await api.put('/auth/me/password', passwords)
+    setUser(data)
+    return data
+  }
+
   const logout = () => {
     localStorage.clear()
     setUser(null)
@@ -39,7 +56,7 @@ export function AuthProvider({ children }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout, refreshUser }}>
+    <AuthContext.Provider value={{ user, loading, login, register, logout, refreshUser, updateProfile, updatePassword }}>
       {children}
     </AuthContext.Provider>
   )

@@ -1,5 +1,6 @@
 import { useAuth } from '../context/AuthContext'
 import { Link } from 'react-router-dom'
+import { getRoleLabel } from '../utils/roles'
 
 const cards = [
   { to: '/teachers', icon: '👨‍🏫', title: 'Учителя', desc: 'Список преподавателей и их предметы' },
@@ -12,18 +13,34 @@ export default function HomePage() {
   const { user } = useAuth()
 
   return (
-    <div style={{ padding: '32px 24px', maxWidth: 900, margin: '0 auto' }}>
+    <div style={{ padding: '32px 24px', maxWidth: 1040, margin: '0 auto' }}>
       <h1 style={{ fontSize: 26, fontWeight: 700, marginBottom: 6 }}>
         Добро пожаловать, {user?.login}!
       </h1>
       <p style={{ color: 'var(--text-muted)', marginBottom: 32 }}>
-        Роль: <span className={`badge badge-${user?.role}`}>{user?.role}</span>
+        Роль: <span className={`badge badge-${user?.role}`}>{getRoleLabel(user?.role)}</span>
       </p>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16 }}>
+      <section className="school-intro">
+        <div>
+          <h2>Цифровая среда школы</h2>
+          <p>
+            Здесь собраны основные данные по учебному процессу: списки преподавателей,
+            ученики по классам, оценки по предметам и сводная аналитика успеваемости.
+          </p>
+        </div>
+        <div className="school-intro-grid">
+          <span>Быстрый просмотр оценок</span>
+          <span>Контроль предметов</span>
+          <span>Роли для завуча, учителя и ученика</span>
+          <span>Отчёты по классам</span>
+        </div>
+      </section>
+
+      <div className="home-card-grid">
         {cards.map(c => (
           <Link key={c.to} to={c.to} style={{ textDecoration: 'none' }}>
-            <div className="card" style={{ cursor: 'pointer', transition: 'transform .15s, box-shadow .15s' }}
+            <div className="card home-card" style={{ cursor: 'pointer', transition: 'transform .15s, box-shadow .15s' }}
               onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,.12)' }}
               onMouseLeave={e => { e.currentTarget.style.transform = ''; e.currentTarget.style.boxShadow = '' }}
             >

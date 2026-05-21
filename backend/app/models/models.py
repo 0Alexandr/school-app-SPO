@@ -23,8 +23,10 @@ class User(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     login = Column(String, unique=True, nullable=False, index=True)
+    email = Column(String, unique=True, nullable=True, index=True)
+    full_name = Column(String, nullable=True)
     hashed_password = Column(String, nullable=False)
-    role = Column(Enum(UserRole), default=UserRole.user, nullable=False)
+    role = Column(Enum(UserRole), default=UserRole.guest, nullable=False)
 
 
 class Teacher(Base):
@@ -33,8 +35,10 @@ class Teacher(Base):
     id = Column(Integer, primary_key=True, index=True)
     full_name = Column(String, nullable=False)
     room = Column(String, nullable=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=True, unique=True)
 
     subjects = relationship("Subject", secondary=teacher_subject, back_populates="teachers")
+    user = relationship("User")
 
 
 class Subject(Base):
@@ -62,9 +66,11 @@ class Student(Base):
     id = Column(Integer, primary_key=True, index=True)
     full_name = Column(String, nullable=False)
     class_id = Column(Integer, ForeignKey("classes.id"), nullable=False)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=True, unique=True)
 
     class_ = relationship("Class", back_populates="students")
     grades = relationship("Grade", back_populates="student")
+    user = relationship("User")
 
 
 class Grade(Base):
