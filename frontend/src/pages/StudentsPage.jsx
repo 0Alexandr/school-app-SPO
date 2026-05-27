@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import api from '../api/client'
 import { useAuth } from '../context/AuthContext'
+import { LIMITS, trimToMax, validateLength } from '../utils/validation'
 
 function StudentModal({ student, classes, users, onClose, onSaved }) {
   const [form, setForm] = useState({
@@ -12,7 +13,8 @@ function StudentModal({ student, classes, users, onClose, onSaved }) {
   const [saving, setSaving] = useState(false)
 
   const handleSave = async () => {
-    if (!form.full_name.trim()) { setError('Введите ФИО'); return }
+    const fullNameError = validateLength(form.full_name, 'ФИО', LIMITS.fullName)
+    if (fullNameError) { setError(fullNameError); return }
     if (!form.class_id) { setError('Выберите класс'); return }
     setSaving(true)
     try {
@@ -63,7 +65,14 @@ function StudentModal({ student, classes, users, onClose, onSaved }) {
         </div>
         <div className="form-group">
           <label>ФИО</label>
-          <input value={form.full_name} onChange={e => setForm(f => ({ ...f, full_name: e.target.value }))} placeholder="Алексеев Дмитрий Павлович" />
+          <input
+            value={form.full_name}
+            onChange={e => setForm(f => ({ ...f, full_name: trimToMax(e.target.value, LIMITS.fullName.max) }))}
+            placeholder="Алексеев Дмитрий Павлович"
+            required
+            minLength={LIMITS.fullName.min}
+            maxLength={LIMITS.fullName.max}
+          />
         </div>
         <div className="form-group">
           <label>Класс</label>
@@ -135,17 +144,18 @@ export default function StudentsPage() {
   return (
     <div style={{ padding: '24px', maxWidth: 960, margin: '0 auto' }}>
       <div className="page-header">
-        <div className="page-title">🎓 Ученики</div>
+        <div className="page-title">Ученики</div>
       </div>
 
       <div className="table-toolbar">
         <input
-          placeholder="🔍 Поиск по ФИО, классу или ID аккаунта..."
+          placeholder="Поиск по ФИО, классу или ID аккаунта..."
           value={filter}
-          onChange={e => setFilter(e.target.value)}
+          onChange={e => setFilter(trimToMax(e.target.value, LIMITS.search.max))}
+          maxLength={LIMITS.search.max}
           style={{ maxWidth: 360 }}
         />
-        {isAdmin && <button className="btn-primary" onClick={() => setModal('add')}>+ Добавить</button>}
+        {isAdmin && <button className="btn-primary" onClick={() => setModal('add')}>Добавить</button>}
       </div>
 
       <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
@@ -177,8 +187,10 @@ export default function StudentsPage() {
                   </td>
                   {isAdmin && (
                     <td>
-                      <button className="btn-secondary btn-sm" onClick={() => setModal(s)} style={{ marginRight: 6 }}>✏️</button>
-                      <button className="btn-danger btn-sm" onClick={() => handleDelete(s.id)}>🗑️</button>
+                      <div className="table-actions">
+                        <button className="action-btn action-edit" onClick={() => setModal(s)}>Редактировать</button>
+                        <button className="action-btn action-delete" onClick={() => handleDelete(s.id)}>Удалить</button>
+                      </div>
                     </td>
                   )}
                 </tr>

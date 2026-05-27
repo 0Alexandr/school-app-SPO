@@ -1,9 +1,10 @@
 import { useState } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { getRoleLabel } from '../utils/roles'
+import { LIMITS, loginPasswordHint, loginPasswordPattern, trimToMax, validateLength } from '../utils/validation'
 
 const isValidEmail = (value) => !value || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)
-const isValidPassword = (value) => value.length >= 5 && /[A-Za-zА-Яа-я]/.test(value)
+const isValidPassword = (value) => loginPasswordPattern.test(value)
 
 export default function ProfilePage() {
   const { user, updateProfile, updatePassword } = useAuth()
@@ -16,6 +17,11 @@ export default function ProfilePage() {
     new_password: '',
     repeat_password: '',
   })
+  const [visiblePasswords, setVisiblePasswords] = useState({
+    current_password: false,
+    new_password: false,
+    repeat_password: false,
+  })
   const [message, setMessage] = useState('')
   const [error, setError] = useState('')
   const [savingProfile, setSavingProfile] = useState(false)
@@ -25,8 +31,13 @@ export default function ProfilePage() {
     event.preventDefault()
     setMessage('')
     setError('')
-    if (profile.full_name.trim().length < 5) {
-      setError('ФИО должно быть не короче 5 символов')
+    const fullNameError = validateLength(profile.full_name, 'ФИО', LIMITS.fullName)
+    if (fullNameError) {
+      setError(fullNameError)
+      return
+    }
+    if (profile.email.trim().length > LIMITS.email.max) {
+      setError(`Почта: максимум ${LIMITS.email.max} символов`)
       return
     }
     if (!isValidEmail(profile.email.trim())) {
@@ -52,7 +63,7 @@ export default function ProfilePage() {
     setMessage('')
     setError('')
     if (!isValidPassword(passwords.new_password)) {
-      setError('Новый пароль должен быть от 5 символов и содержать хотя бы одну букву')
+      setError(`Новый пароль: ${loginPasswordHint}`)
       return
     }
     if (passwords.new_password !== passwords.repeat_password) {
@@ -72,6 +83,10 @@ export default function ProfilePage() {
     } finally {
       setSavingPassword(false)
     }
+  }
+
+  const togglePasswordVisibility = (field) => {
+    setVisiblePasswords(current => ({ ...current, [field]: !current[field] }))
   }
 
   return (
@@ -109,10 +124,11 @@ export default function ProfilePage() {
               <label>ФИО</label>
               <input
                 value={profile.full_name}
-                onChange={event => setProfile(current => ({ ...current, full_name: event.target.value }))}
+                onChange={event => setProfile(current => ({ ...current, full_name: trimToMax(event.target.value, LIMITS.fullName.max) }))}
                 placeholder="Иванов Иван Иванович"
                 required
-                minLength={5}
+                minLength={LIMITS.fullName.min}
+                maxLength={LIMITS.fullName.max}
               />
             </div>
             <div className="form-group">
@@ -120,8 +136,9 @@ export default function ProfilePage() {
               <input
                 type="email"
                 value={profile.email}
-                onChange={event => setProfile(current => ({ ...current, email: event.target.value }))}
+                onChange={event => setProfile(current => ({ ...current, email: trimToMax(event.target.value, LIMITS.email.max) }))}
                 placeholder="name@school.ru"
+                maxLength={LIMITS.email.max}
               />
             </div>
             <button className="btn-primary" type="submit" disabled={savingProfile}>
@@ -135,32 +152,67 @@ export default function ProfilePage() {
           <form onSubmit={savePassword}>
             <div className="form-group">
               <label>Текущий пароль</label>
-              <input
-                type="password"
-                value={passwords.current_password}
-                onChange={event => setPasswords(current => ({ ...current, current_password: event.target.value }))}
-                required
-              />
+              <div className="password-input">
+                <input
+                  type={visiblePasswords.current_password ? 'text' : 'password'}
+                  value={passwords.current_password}
+                  onChange={event => setPasswords(current => ({ ...current, current_password: trimToMax(event.target.value, LIMITS.password.max) }))}
+                  required
+                  maxLength={LIMITS.password.max}
+                />
+                <button
+                  type="button"
+                  className="password-toggle password-toggle-text"
+                  onClick={() => togglePasswordVisibility('current_password')}
+                  aria-label={visiblePasswords.current_password ? 'Скрыть пароль' : 'Показать пароль'}
+                >
+                  {visiblePasswords.current_password ? 'Скрыть' : 'Показать'}
+                </button>
+              </div>
             </div>
             <div className="form-group">
               <label>Новый пароль</label>
-              <input
-                type="password"
-                value={passwords.new_password}
-                onChange={event => setPasswords(current => ({ ...current, new_password: event.target.value }))}
-                required
-                minLength={5}
-              />
+              <div className="password-input">
+                <input
+                  type={visiblePasswords.new_password ? 'text' : 'password'}
+                  value={passwords.new_password}
+                  onChange={event => setPasswords(current => ({ ...current, new_password: trimToMax(event.target.value, LIMITS.password.max) }))}
+                  required
+                  minLength={LIMITS.password.min}
+                  maxLength={LIMITS.password.max}
+                  pattern="[A-Za-z0-9@._-]{3,15}"
+                  title={loginPasswordHint}
+                />
+                <button
+                  type="button"
+                  className="password-toggle password-toggle-text"
+                  onClick={() => togglePasswordVisibility('new_password')}
+                  aria-label={visiblePasswords.new_password ? 'Скрыть пароль' : 'Показать пароль'}
+                >
+                  {visiblePasswords.new_password ? 'Скрыть' : 'Показать'}
+                </button>
+              </div>
             </div>
             <div className="form-group">
               <label>Повторите пароль</label>
-              <input
-                type="password"
-                value={passwords.repeat_password}
-                onChange={event => setPasswords(current => ({ ...current, repeat_password: event.target.value }))}
-                required
-                minLength={5}
-              />
+              <div className="password-input">
+                <input
+                  type={visiblePasswords.repeat_password ? 'text' : 'password'}
+                  value={passwords.repeat_password}
+                  onChange={event => setPasswords(current => ({ ...current, repeat_password: trimToMax(event.target.value, LIMITS.password.max) }))}
+                  required
+                  minLength={LIMITS.password.min}
+                  maxLength={LIMITS.password.max}
+                />
+                <button
+                  type="button"
+                  className="password-toggle password-toggle-text"
+                  onClick={() => togglePasswordVisibility('repeat_password')}
+                  aria-label={visiblePasswords.repeat_password ? 'Скрыть пароль' : 'Показать пароль'}
+                >
+                  {visiblePasswords.repeat_password ? 'Скрыть' : 'Показать'}
+                </button>
+              </div>
             </div>
             <button className="btn-primary" type="submit" disabled={savingPassword}>
               {savingPassword ? 'Сохранение...' : 'Изменить пароль'}

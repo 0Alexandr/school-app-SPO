@@ -18,9 +18,9 @@ def ensure_grade_access(db: Session, current_user, subject_id: int):
     if current_user.role == "admin":
         return
     if current_user.role != "user":
-        raise HTTPException(status_code=403, detail="Only teachers and admins can change grades")
+        raise HTTPException(status_code=403, detail="Изменять оценки могут только учителя и завуч")
     if subject_id not in teacher_subject_ids(db, current_user.id):
-        raise HTTPException(status_code=403, detail="This subject is not assigned to the teacher")
+        raise HTTPException(status_code=403, detail="Этот предмет не назначен учителю")
 
 
 def find_existing_grade(
@@ -67,9 +67,9 @@ def list_grades(
 def create_grade(data: GradeCreate, db: Session = Depends(get_db), current_user=Depends(require_viewer)):
     ensure_grade_access(db, current_user, data.subject_id)
     if not db.query(Student).filter(Student.id == data.student_id).first():
-        raise HTTPException(status_code=404, detail="Student not found")
+        raise HTTPException(status_code=404, detail="Ученик не найден")
     if not db.query(Subject).filter(Subject.id == data.subject_id).first():
-        raise HTTPException(status_code=404, detail="Subject not found")
+        raise HTTPException(status_code=404, detail="Предмет не найден")
     if find_existing_grade(db, data.student_id, data.subject_id, data.quarter):
         raise HTTPException(
             status_code=409,
@@ -86,7 +86,7 @@ def create_grade(data: GradeCreate, db: Session = Depends(get_db), current_user=
 def update_grade(grade_id: int, data: GradeUpdate, db: Session = Depends(get_db), current_user=Depends(require_viewer)):
     grade = db.query(Grade).filter(Grade.id == grade_id).first()
     if not grade:
-        raise HTTPException(status_code=404, detail="Grade not found")
+        raise HTTPException(status_code=404, detail="Оценка не найдена")
     ensure_grade_access(db, current_user, grade.subject_id)
     next_quarter = data.quarter if data.quarter is not None else grade.quarter
     if find_existing_grade(db, grade.student_id, grade.subject_id, next_quarter, exclude_grade_id=grade.id):
@@ -105,7 +105,7 @@ def update_grade(grade_id: int, data: GradeUpdate, db: Session = Depends(get_db)
 def delete_grade(grade_id: int, db: Session = Depends(get_db), current_user=Depends(require_viewer)):
     grade = db.query(Grade).filter(Grade.id == grade_id).first()
     if not grade:
-        raise HTTPException(status_code=404, detail="Grade not found")
+        raise HTTPException(status_code=404, detail="Оценка не найдена")
     ensure_grade_access(db, current_user, grade.subject_id)
     db.delete(grade)
     db.commit()

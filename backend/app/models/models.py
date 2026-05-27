@@ -69,7 +69,7 @@ class Student(Base):
     user_id = Column(Integer, ForeignKey("users.id"), nullable=True, unique=True)
 
     class_ = relationship("Class", back_populates="students")
-    grades = relationship("Grade", back_populates="student")
+    grades = relationship("Grade", back_populates="student", cascade="all, delete-orphan")
     user = relationship("User")
 
 

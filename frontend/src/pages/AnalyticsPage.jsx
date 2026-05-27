@@ -20,7 +20,7 @@ export default function AnalyticsPage() {
 
   return (
     <div style={{ padding: '24px', maxWidth: 1120, margin: '0 auto' }}>
-      <div className="page-title" style={{ marginBottom: 24 }}>📈 Аналитика успеваемости</div>
+      <div className="page-title" style={{ marginBottom: 24 }}>Аналитика успеваемости</div>
 
       <div className="grade-distribution-row">
         {distribution.map(item => (
@@ -54,10 +54,10 @@ export default function AnalyticsPage() {
       {/* Failing students */}
       <div className="card">
         <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 16 }}>
-          ⚠️ Неуспевающие ученики ({data.failing_students.length})
+          Неуспевающие ученики ({data.failing_students.length})
         </div>
         {data.failing_students.length === 0 ? (
-          <div className="alert alert-success">Неуспевающих учеников нет 🎉</div>
+          <div className="alert alert-success">Неуспевающих учеников нет</div>
         ) : (
           <table>
             <thead>

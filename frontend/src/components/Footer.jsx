@@ -3,9 +3,9 @@ export default function Footer() {
     <footer className="app-footer">
       <div>
         <strong>Школьная система</strong>
-        <span>Единое пространство для учеников, учителей и завуча</span>
+        <span>school-system@example.ru</span>
       </div>
-      <span>Учёт успеваемости, классов, предметов и аналитики</span>
+      <span>Телефон: +7 (900) 123-45-67</span>
     </footer>
   )
 }

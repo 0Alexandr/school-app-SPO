@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import api from '../api/client'
 import { useAuth } from '../context/AuthContext'
+import { LIMITS, trimToMax, validateLength } from '../utils/validation'
 
 function TeacherModal({ teacher, subjects, users, onClose, onSaved }) {
   const [form, setForm] = useState({
@@ -22,7 +23,10 @@ function TeacherModal({ teacher, subjects, users, onClose, onSaved }) {
   }
 
   const handleSave = async () => {
-    if (!form.full_name.trim()) { setError('Введите ФИО'); return }
+    const fullNameError = validateLength(form.full_name, 'ФИО', LIMITS.fullName)
+    if (fullNameError) { setError(fullNameError); return }
+    const roomError = form.room.trim() ? validateLength(form.room, 'Кабинет', { min: 1, max: LIMITS.room.max }) : ''
+    if (roomError) { setError(roomError); return }
     setSaving(true)
     try {
       if (teacher) {
@@ -45,11 +49,23 @@ function TeacherModal({ teacher, subjects, users, onClose, onSaved }) {
         {error && <div className="alert alert-error">{error}</div>}
         <div className="form-group">
           <label>ФИО</label>
-          <input value={form.full_name} onChange={e => setForm(f => ({ ...f, full_name: e.target.value }))} placeholder="Иванов Иван Иванович" />
+          <input
+            value={form.full_name}
+            onChange={e => setForm(f => ({ ...f, full_name: trimToMax(e.target.value, LIMITS.fullName.max) }))}
+            placeholder="Иванов Иван Иванович"
+            required
+            minLength={LIMITS.fullName.min}
+            maxLength={LIMITS.fullName.max}
+          />
         </div>
         <div className="form-group">
           <label>Кабинет</label>
-          <input value={form.room} onChange={e => setForm(f => ({ ...f, room: e.target.value }))} placeholder="101" />
+          <input
+            value={form.room}
+            onChange={e => setForm(f => ({ ...f, room: trimToMax(e.target.value, LIMITS.room.max) }))}
+            placeholder="101"
+            maxLength={LIMITS.room.max}
+          />
         </div>
         <div className="form-group">
           <label>Аккаунт учителя</label>
@@ -137,17 +153,18 @@ export default function TeachersPage() {
   return (
     <div style={{ padding: '24px', maxWidth: 960, margin: '0 auto' }}>
       <div className="page-header">
-        <div className="page-title">👨‍🏫 Учителя</div>
+        <div className="page-title">Учителя</div>
       </div>
 
       <div className="table-toolbar">
         <input
-          placeholder="🔍 Поиск по ФИО или ID аккаунта..."
+          placeholder="Поиск по ФИО или ID аккаунта..."
           value={filter}
-          onChange={e => setFilter(e.target.value)}
+          onChange={e => setFilter(trimToMax(e.target.value, LIMITS.search.max))}
+          maxLength={LIMITS.search.max}
           style={{ maxWidth: 360 }}
         />
-        {isAdmin && <button className="btn-primary" onClick={() => setModal('add')}>+ Добавить</button>}
+        {isAdmin && <button className="btn-primary" onClick={() => setModal('add')}>Добавить</button>}
       </div>
 
       <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
@@ -183,8 +200,10 @@ export default function TeachersPage() {
                   </td>
                   {isAdmin && (
                     <td>
-                      <button className="btn-secondary btn-sm" onClick={() => setModal(t)} style={{ marginRight: 6 }}>✏️</button>
-                      <button className="btn-danger btn-sm" onClick={() => handleDelete(t.id)}>🗑️</button>
+                      <div className="table-actions">
+                        <button className="action-btn action-edit" onClick={() => setModal(t)}>Редактировать</button>
+                        <button className="action-btn action-delete" onClick={() => handleDelete(t.id)}>Удалить</button>
+                      </div>
                     </td>
                   )}
                 </tr>

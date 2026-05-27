@@ -16,7 +16,7 @@ router = APIRouter()
 def login(data: LoginRequest, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.login == data.login).first()
     if not user or not verify_password(data.password, user.hashed_password):
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Неверный логин или пароль")
     return TokenResponse(
         access_token=create_access_token(user.id),
         refresh_token=create_refresh_token(user.id),
@@ -27,10 +27,10 @@ def login(data: LoginRequest, db: Session = Depends(get_db)):
 def refresh(data: RefreshRequest, db: Session = Depends(get_db)):
     payload = decode_token(data.refresh_token)
     if payload.get("type") != "refresh":
-        raise HTTPException(status_code=401, detail="Not a refresh token")
+        raise HTTPException(status_code=401, detail="Неверный токен обновления")
     user = db.query(User).filter(User.id == int(payload["sub"])).first()
     if not user:
-        raise HTTPException(status_code=401, detail="User not found")
+        raise HTTPException(status_code=401, detail="Пользователь не найден")
     return TokenResponse(
         access_token=create_access_token(user.id),
         refresh_token=create_refresh_token(user.id),
@@ -40,9 +40,9 @@ def refresh(data: RefreshRequest, db: Session = Depends(get_db)):
 @router.post("/register", response_model=UserOut)
 def register(data: UserCreate, db: Session = Depends(get_db)):
     if db.query(User).filter(User.login == data.login).first():
-        raise HTTPException(status_code=400, detail="Login already taken")
+        raise HTTPException(status_code=400, detail="Такой логин уже занят")
     if data.email and db.query(User).filter(User.email == data.email).first():
-        raise HTTPException(status_code=400, detail="Email already taken")
+        raise HTTPException(status_code=400, detail="Такая почта уже занята")
     user = User(
         login=data.login,
         email=data.email,
@@ -68,7 +68,7 @@ def update_me(
     current_user: User = Depends(get_current_user),
 ):
     if data.email and db.query(User).filter(User.email == data.email, User.id != current_user.id).first():
-        raise HTTPException(status_code=400, detail="Email already taken")
+        raise HTTPException(status_code=400, detail="Такая почта уже занята")
     current_user.email = data.email
     current_user.full_name = data.full_name
     db.commit()

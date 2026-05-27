@@ -51,7 +51,7 @@ def decode_token(token: str) -> dict:
     except JWTError:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid or expired token",
+            detail="Сессия истекла или токен недействителен",
         )
 
 
@@ -61,26 +61,26 @@ def get_current_user(
 ) -> User:
     payload = decode_token(token)
     if payload.get("type") != "access":
-        raise HTTPException(status_code=401, detail="Not an access token")
+        raise HTTPException(status_code=401, detail="Неверный токен доступа")
     user = db.query(User).filter(User.id == int(payload["sub"])).first()
     if not user:
-        raise HTTPException(status_code=401, detail="User not found")
+        raise HTTPException(status_code=401, detail="Пользователь не найден")
     return user
 
 
 def require_admin(current_user: User = Depends(get_current_user)) -> User:
     if current_user.role != "admin":
-        raise HTTPException(status_code=403, detail="Admin access required")
+        raise HTTPException(status_code=403, detail="Доступ разрешён только завучу")
     return current_user
 
 
 def require_user(current_user: User = Depends(get_current_user)) -> User:
     if current_user.role not in ("user", "admin"):
-        raise HTTPException(status_code=403, detail="Access denied")
+        raise HTTPException(status_code=403, detail="Доступ запрещён")
     return current_user
 
 
 def require_viewer(current_user: User = Depends(get_current_user)) -> User:
     if current_user.role not in ("guest", "user", "admin"):
-        raise HTTPException(status_code=403, detail="Access denied")
+        raise HTTPException(status_code=403, detail="Доступ запрещён")
     return current_user

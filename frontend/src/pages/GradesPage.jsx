@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import api from '../api/client'
 import { useAuth } from '../context/AuthContext'
+import { LIMITS, trimToMax } from '../utils/validation'
 
 function GradeModal({ grade, students, subjects, onClose, onSaved }) {
   const [form, setForm] = useState({
@@ -172,14 +173,15 @@ export default function GradesPage() {
     <div style={{ padding: '24px', maxWidth: 1040, margin: '0 auto' }}>
       <div className="page-header">
         <div className="page-title">Успеваемость</div>
-        {canEditGrades && <button className="btn-primary" onClick={() => setModal('add')}>+ Добавить оценку</button>}
+        {canEditGrades && <button className="btn-primary" onClick={() => setModal('add')}>Добавить оценку</button>}
       </div>
 
       <div style={{ display: 'flex', gap: 12, marginBottom: 16, flexWrap: 'wrap' }}>
         <input
           placeholder="Поиск по ученику..."
           value={filterStudent}
-          onChange={e => setFilterStudent(e.target.value)}
+          onChange={e => setFilterStudent(trimToMax(e.target.value, LIMITS.search.max))}
+          maxLength={LIMITS.search.max}
           style={{ maxWidth: 280 }}
         />
         <select value={filterSubject} onChange={e => setFilterSubject(e.target.value)} style={{ maxWidth: 220 }}>
@@ -235,8 +237,10 @@ export default function GradesPage() {
                   <td><span className={`badge ${gradeColor(grade.value)}`}>{grade.value}</span></td>
                   {canEditGrades && (
                     <td>
-                      <button className="btn-secondary btn-sm" onClick={() => setModal(grade)} style={{ marginRight: 6 }}>✏️</button>
-                      <button className="btn-danger btn-sm" onClick={() => handleDelete(grade.id)}>🗑️</button>
+                      <div className="table-actions">
+                        <button className="action-btn action-edit" onClick={() => setModal(grade)}>Редактировать</button>
+                        <button className="action-btn action-delete" onClick={() => handleDelete(grade.id)}>Удалить</button>
+                      </div>
                     </td>
                   )}
                 </tr>

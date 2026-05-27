@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from typing import List
 
 from app.db.database import get_db
-from app.models.models import Class, Student, User
+from app.models.models import Class, Grade, Student, User
 from app.schemas.schemas import ClassCreate, ClassOut, StudentCreate, StudentOut, StudentUpdate
 from app.services.auth_service import require_admin, require_viewer
 
@@ -13,7 +13,7 @@ router = APIRouter()
 def get_student_or_404(student_id: int, db: Session) -> Student:
     student = db.query(Student).filter(Student.id == student_id).first()
     if not student:
-        raise HTTPException(status_code=404, detail="Student not found")
+        raise HTTPException(status_code=404, detail="Ученик не найден")
     return student
 
 
@@ -31,9 +31,9 @@ def list_classes(db: Session = Depends(get_db), _=Depends(require_viewer)):
 def create_class(data: ClassCreate, db: Session = Depends(get_db), _=Depends(require_admin)):
     name = data.name.strip()
     if not name:
-        raise HTTPException(status_code=400, detail="Class name is required")
+        raise HTTPException(status_code=400, detail="Введите название класса")
     if db.query(Class).filter(Class.name == name).first():
-        raise HTTPException(status_code=400, detail="Class already exists")
+        raise HTTPException(status_code=400, detail="Такой класс уже существует")
     class_ = Class(name=name)
     db.add(class_)
     db.commit()
@@ -49,12 +49,12 @@ def get_student(student_id: int, db: Session = Depends(get_db), _=Depends(requir
 @router.post("/", response_model=StudentOut, status_code=201)
 def create_student(data: StudentCreate, db: Session = Depends(get_db), _=Depends(require_admin)):
     if not db.query(Class).filter(Class.id == data.class_id).first():
-        raise HTTPException(status_code=404, detail="Class not found")
+        raise HTTPException(status_code=404, detail="Класс не найден")
     if data.user_id:
         if not db.query(User).filter(User.id == data.user_id).first():
-            raise HTTPException(status_code=404, detail="User not found")
+            raise HTTPException(status_code=404, detail="Пользователь не найден")
         if db.query(Student).filter(Student.user_id == data.user_id).first():
-            raise HTTPException(status_code=409, detail="User is already linked to a student")
+            raise HTTPException(status_code=409, detail="Пользователь уже привязан к ученику")
     student = Student(full_name=data.full_name, class_id=data.class_id, user_id=data.user_id)
     db.add(student)
     db.commit()
@@ -66,13 +66,13 @@ def create_student(data: StudentCreate, db: Session = Depends(get_db), _=Depends
 def update_student(student_id: int, data: StudentUpdate, db: Session = Depends(get_db), _=Depends(require_admin)):
     student = get_student_or_404(student_id, db)
     if not db.query(Class).filter(Class.id == data.class_id).first():
-        raise HTTPException(status_code=404, detail="Class not found")
+        raise HTTPException(status_code=404, detail="Класс не найден")
     if data.user_id:
         if not db.query(User).filter(User.id == data.user_id).first():
-            raise HTTPException(status_code=404, detail="User not found")
+            raise HTTPException(status_code=404, detail="Пользователь не найден")
         existing_student = db.query(Student).filter(Student.user_id == data.user_id, Student.id != student.id).first()
         if existing_student:
-            raise HTTPException(status_code=409, detail="User is already linked to a student")
+            raise HTTPException(status_code=409, detail="Пользователь уже привязан к ученику")
     student.full_name = data.full_name
     student.class_id = data.class_id
     student.user_id = data.user_id
@@ -84,5 +84,6 @@ def update_student(student_id: int, data: StudentUpdate, db: Session = Depends(g
 @router.delete("/{student_id}", status_code=204)
 def delete_student(student_id: int, db: Session = Depends(get_db), _=Depends(require_admin)):
     student = get_student_or_404(student_id, db)
+    db.query(Grade).filter(Grade.student_id == student.id).delete(synchronize_session=False)
     db.delete(student)
     db.commit()
